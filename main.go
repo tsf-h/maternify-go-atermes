@@ -14,8 +14,8 @@ var (
 )
 
 func connectDB() error {
-	//dsn := "host=hsdb-rw.db user=maternify password=51pK0=`x.OpB dbname=maternify_production port=5432"
-	dsn := "host=localhost user=maternify password=51pK0=`x.OpB dbname=maternify_production port=15432"
+	dsn := "host=hsdb-rw.db user=maternify password=51pK0=`x.OpB dbname=maternify_production port=5432"
+	//dsn := "host=localhost user=maternify password=51pK0=`x.OpB dbname=maternify_production port=15432"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return err
