@@ -161,18 +161,35 @@ func (s *JWTService) ExtractJWTForAllCredentials() error {
 		return fmt.Errorf("no enabled environments found")
 	}
 
-	for i, env := range envs {
-		baseURL := fmt.Sprintf("https://%s.atermes.nl", env.Tenant)
-		log.Printf("\n[%d/%d] Processing %s on tenant %s", i+1, len(envs), env.Credentials.Email, env.Tenant)
+	// Group environments by credentials ID to process each credential only once
+	credentialMap := make(map[string]*entity.AtermesCredentials)
+	credentialToTenant := make(map[string]string)
 
-		if err := s.extractOneCredential(&env.Credentials, baseURL); err != nil {
-			log.Printf("❌ Failed for %s on %s: %v", env.Credentials.Email, env.Tenant, err)
+	for _, env := range envs {
+		credID := env.Credentials.ID.String()
+		if _, exists := credentialMap[credID]; !exists {
+			credentialMap[credID] = &env.Credentials
+			credentialToTenant[credID] = env.Tenant
+		}
+	}
+
+	log.Printf("Found %d unique credentials across %d environments", len(credentialMap), len(envs))
+
+	i := 0
+	for credID, cred := range credentialMap {
+		i++
+		tenant := credentialToTenant[credID]
+		baseURL := fmt.Sprintf("https://%s.atermes.nl", tenant)
+		log.Printf("\n[%d/%d] Processing %s on tenant %s", i, len(credentialMap), cred.Email, tenant)
+
+		if err := s.extractOneCredential(cred, baseURL); err != nil {
+			log.Printf("❌ Failed for %s on %s: %v", cred.Email, tenant, err)
 			continue
 		}
 
 		time.Sleep(1 * time.Second) // optional: prevent rate limiting
 	}
 
-	log.Println("🎉 All environments processed")
+	log.Println("🎉 All credentials processed")
 	return nil
 }
